@@ -135,7 +135,7 @@
         // ==========================================
         // 1. Firebase Initialization & Config
         // ==========================================
-  const firebaseConfig = {
+     const firebaseConfig = {
   apiKey: "AIzaSyDW4jptY5bXGKm9mOv6hU21heN8arMkHc4",
   authDomain: "classdrinks-66425.firebaseapp.com",
   projectId: "classdrinks-66425",
@@ -166,14 +166,14 @@
             admins: [],
             cart: [],
             adminUser: null,
-            currentAdminTab: 'campaign', // 預設跳到任務管理
+            currentAdminTab: 'campaign',
             siteName: '和風茶屋',
             orderFilterShopId: 'all',
             orderFilterStartDate: '',
             orderFilterEndDate: '',
             orderCurrentPage: 1,
             campaign: { isActive: false, activeShopId: '', title: '本日訂購任務' },
-            campaignHistory: [] // 新增歷史紀錄狀態
+            campaignHistory: [] 
         };
 
         // ==========================================
@@ -202,7 +202,7 @@
             }
         });
 
-        initAuth(); // 啟動驗證
+        initAuth();
 
         // ==========================================
         // 4. Data Listeners (Firestore Realtime)
@@ -246,7 +246,6 @@
                 if (footerName) footerName.textContent = state.siteName;
             }, (error) => console.error("Error fetching settings:", error));
 
-            // 監聽當前訂購任務
             onSnapshot(doc(db, PATH_SETTINGS, 'campaign'), (docSnap) => {
                 if (docSnap.exists()) {
                     state.campaign = docSnap.data();
@@ -256,10 +255,8 @@
                 reRenderCurrentView();
             }, (error) => console.error("Error fetching campaign:", error));
 
-            // 監聽歷史任務紀錄
             onSnapshot(collection(db, PATH_CAMPAIGN_HISTORY), (snapshot) => {
                 state.campaignHistory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // 依照結束時間新到舊排序
                 state.campaignHistory.sort((a, b) => {
                     const timeA = a.endedAt?.toMillis ? a.endedAt.toMillis() : 0;
                     const timeB = b.endedAt?.toMillis ? b.endedAt.toMillis() : 0;
@@ -537,7 +534,7 @@
         };
 
         // ==========================================
-        // 7. Cart & Ordering Logic & LINE Notify
+        // 7. Cart & Ordering Logic
         // ==========================================
         window.addToCart = (id, name, basePrice, size, ice, sugar, topping, toppingPrice) => {
             const finalPrice = basePrice + toppingPrice;
@@ -618,36 +615,6 @@
             }
         };
 
-        // --- LINE Notify 輔助函數 ---
-        const sendLineNotify = (order) => {
-            const token = 'slJRvHrUnyBVS8ETTZHCSt-0GkqK-zBC';
-            
-            // 組合要推播的訊息內容
-            let msg = `\n🔔 【新訂單通知】\n`;
-            msg += `👤 訂購人：${order.customerName}\n`;
-            msg += `🏪 店家：${order.shopName}\n`;
-            if (order.notes) msg += `📝 備註：${order.notes}\n`;
-            msg += `💰 總金額：$${order.totalAmount}\n`;
-            msg += `--- 訂購明細 ---\n`;
-            
-            order.items.forEach(item => {
-                let vText = [];
-                if (item.size && item.size !== '預設') vText.push(item.size + '杯');
-                if (item.ice) vText.push(item.ice);
-                if (item.sugar) vText.push(item.sugar);
-                if (item.topping && item.topping !== '無') vText.push('+' + item.topping);
-                
-                const variantStr = vText.length > 0 ? ` (${vText.join(', ')})` : '';
-                msg += `• ${item.name}${variantStr} x${item.qty}\n`;
-            });
-
-            // 呼叫您提供的 API Endpoint
-            const url = `https://v2.chateverywhere.app/api/line/notify?token=${token}&message=${encodeURIComponent(msg)}`;
-            
-            // 使用 fetch 送出請求 (這裡不使用 await 避免卡住前端畫面)
-            fetch(url).catch(err => console.error('LINE Notify 發送失敗:', err));
-        };
-
         window.submitOrder = async () => {
             if (state.cart.length === 0) return showModal('提示', '購物車是空的！');
             
@@ -679,19 +646,14 @@
             try {
                 showModal('處理中', '<div class="text-center py-6"><div class="loader mx-auto mb-4"></div><p>正在送出訂單...</p></div>');
                 
-                // 1. 寫入訂單到資料庫
                 await addDoc(collection(db, PATH_ORDERS), orderData);
                 
-                // 2. 觸發 LINE Notify 推播通知
-                sendLineNotify(orderData);
-
-                // 3. 清理購物車並更新畫面
                 state.cart = [];
                 updateCartUI();
                 document.getElementById('order-customer-notes').value = '';
                 toggleCart();
-                
                 showModal('訂購成功', `<div class="text-center"><i class="fa-solid fa-circle-check text-5xl text-matcha mb-4"></i><p class="text-lg">您的訂單已送出！</p><p class="text-sm text-gray-500 mt-2">店家準備中，請稍候。</p></div>`);
+                
             } catch (error) {
                 console.error("Order error", error);
                 showModal('錯誤', '送出訂單失敗，請稍後再試。');
@@ -1415,7 +1377,6 @@
             try {
                 const apiKey = "";
                 const finalKey = customKey || apiKey;
-                // Updated to use the recommended gemini-3.6-flash model
                 const modelVersion = 'gemini-3.6-flash';
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelVersion}:generateContent?key=${finalKey}`;
                 const prompt = "你是一個專業的資料輸入員。請從這張菜單圖片中提取所有飲料品項。如果有分中杯(M)和大杯(L)的價格，請分別填寫對應的數字。如果飲料只有單一價格，請將價格填入 priceL 欄位中。如果是空菜單請回傳空陣列。";
@@ -1424,8 +1385,6 @@
                     contents: [{ role: "user", parts: [{ text: prompt }, { inlineData: { mimeType: mimeType, data: base64Data.split(',')[1] } }] }],
                     generationConfig: {
                         responseMimeType: "application/json",
-                        // Replaced deprecated sampling parameters with the new thinking_level
-                        thinking_level: "low",
                         responseSchema: {
                             type: "ARRAY",
                             items: {
@@ -1480,7 +1439,7 @@
                 console.error("AI Scan Error:", error);
                 let displayError = error.message;
                 if (displayError.includes('denied access')) displayError = `<b>專案被拒絕存取 (Denied Access)</b><br><br>這代表您填寫的「自訂 API Key」對應的 Google 帳號權限異常。<br><br>💡 <b>解決方案：</b>請前往左側「個人設定」，將 API Key 欄位<b>完全清空（不要留空格）</b>後點擊儲存，切換回內建金鑰再試一次！`;
-                else if (displayError.includes('unregistered callers') || displayError.includes('API_KEY_INVALID')) displayError = `缺少有效的 API Key。請確認環境金鑰 ক্যাম入，或至「個人設定」重新填寫有效的金鑰。`;
+                else if (displayError.includes('unregistered callers') || displayError.includes('API_KEY_INVALID')) displayError = `缺少有效的 API Key。請確認環境金鑰已注入，或至「個人設定」重新填寫有效的金鑰。`;
                 showModal('掃描失敗', `<div class="text-center py-6 text-red-500"><i class="fa-solid fa-triangle-exclamation text-4xl mb-3"></i><p class="text-lg font-bold mb-2">無法辨識菜單圖片</p><div class="bg-red-50 p-4 rounded text-sm text-left border border-red-200 text-red-800 max-h-48 overflow-y-auto w-full break-words">${displayError}</div></div>`);
             }
         };
