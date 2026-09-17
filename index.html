@@ -135,9 +135,15 @@
         // ==========================================
         // 1. Firebase Initialization & Config
         // ==========================================
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "mock-key", authDomain: "mock.firebaseapp.com", projectId: "mock-project"
-        };
+  const firebaseConfig = {
+  apiKey: "AIzaSyDW4jptY5bXGKm9mOv6hU21heN8arMkHc4",
+  authDomain: "classdrinks-66425.firebaseapp.com",
+  projectId: "classdrinks-66425",
+  storageBucket: "classdrinks-66425.firebasestorage.app",
+  messagingSenderId: "371783163832",
+  appId: "1:371783163832:web:25b3b3b8fed5deddcbf94d"
+};
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
